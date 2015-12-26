@@ -376,39 +376,83 @@ namespace COLLADAMax
 
 	COLLADAMax::String DocumentExporter::getXRefOutputPath( const ExportSceneGraph::XRefSceneGraph& xRefSceneGraph ) const
 	{
+        bool exportRelativePaths = getOptions().getExportRelativePaths();
 		const String& xRefOutputFileDir = getOptions().getXRefOutputDir();
 
-		if ( xRefOutputFileDir.empty() )
-		{
-			COLLADASW::URI uri(mOutputFileUri, xRefSceneGraph.exportFileBaseName + ".dae");
-			return uri.toNativePath();
-		}
-		else
-		{
-			COLLADASW::URI xRefOutputFileDirURI(COLLADASW::URI::nativePathToUri(xRefOutputFileDir));
-			COLLADASW::URI uri(xRefOutputFileDirURI, xRefSceneGraph.exportFileBaseName + ".dae");
-			return uri.toNativePath();
-		}
+        COLLADASW::URI uri = getAbsoluteXRefOutputURI(xRefSceneGraph, xRefOutputFileDir);
+        String path = uri.toNativePath();
+
+        return path;
 	}
 
 	COLLADASW::URI DocumentExporter::getXRefOutputURI( const ExportSceneGraph::XRefSceneGraph& xRefSceneGraph ) const
 	{
+        bool exportRelativePaths = getOptions().getExportRelativePaths();
 		const String& xRefOutputFileDir = getOptions().getXRefOutputDir();
+
+        COLLADASW::URI uri = getAbsoluteXRefOutputURI(xRefSceneGraph, xRefOutputFileDir);
 
 		if ( xRefOutputFileDir.empty() )
 		{
-			COLLADASW::URI uri(xRefSceneGraph.exportFileBaseName + ".dae");
-			return uri;
+            if ( exportRelativePaths )
+            {
+                uri.makeRelativeTo(mOutputFileUri, true);
+            }
 		}
 		else
 		{
-			COLLADASW::URI xRefOutputFileDirURI(COLLADASW::URI::nativePathToUri(xRefOutputFileDir));
-			COLLADASW::URI uri(xRefOutputFileDirURI, xRefSceneGraph.exportFileBaseName + ".dae");
-			uri.makeRelativeTo(mOutputFileUri, true);
-			return uri;
+            if ( exportRelativePaths )
+            {
+			    COLLADASW::URI xRefOutputFileDirURI(COLLADASW::URI::nativePathToUri(xRefOutputFileDir));
+			    uri.makeRelativeTo(mOutputFileUri, true);
+			    return uri;
+            }
 		}
+
+        return uri;
 	}
 
+    COLLADASW::URI DocumentExporter::getAbsoluteXRefOutputURI( const ExportSceneGraph::XRefSceneGraph& xRefSceneGraph, const String& xRefOutputFileDir ) const
+    {
+        if ( xRefOutputFileDir.empty() )
+        {
+            COLLADASW::URI uri = xRefSceneGraph.exportSceneGraph->getMaxFileUri();
+
+            // For some reason getPath() behavior below changes when scheme is
+            // not empty - probably a URI parsing bug?
+            uri.setScheme("");
+
+            // Check whether path is relative and try to fix uri.
+
+            if ( uri.getPath()[0] != '/' )
+            {
+                // Hopefully main file output URI is never relative...
+                COLLADASW::URI outputFileDirUri(mExportSceneGraph->getMaxFileUri().getPathDir());
+                uri = COLLADASW::URI(outputFileDirUri, uri.getPath());
+            }
+
+            if ( uri.getScheme().empty() )
+            {
+				uri.setScheme(COLLADASW::URI::SCHEME_FILE);
+            }
+
+            uri = COLLADASW::URI(uri, uri.getPathFileBase() + ".dae");
+
+            return uri;
+        }
+        else
+        {
+            COLLADASW::URI xRefOutputFileDirURI(COLLADASW::URI::nativePathToUri(xRefOutputFileDir));
+			COLLADASW::URI uri(xRefOutputFileDirURI, xRefSceneGraph.exportFileBaseName + ".dae");
+
+            if ( uri.getScheme().empty() )
+            {
+				uri.setScheme(COLLADASW::URI::SCHEME_FILE);
+            }
+
+            return uri;
+        }
+    }
 
 	//---------------------------------------------------------------
 	bool ObjectIdentifier::operator<( const ObjectIdentifier& other ) const

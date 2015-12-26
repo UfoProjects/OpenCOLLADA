@@ -118,9 +118,14 @@ namespace COLLADAMax
 		/** Returns the path of the COLLADASW file created for the max file with URi @a sourceFile.*/
 		String getXRefOutputPath(const ExportSceneGraph::XRefSceneGraph& xRefSceneGraph) const;
 
-		/** Returns the URI of the COLLADASW file created for the max file with URi @a sourceFile relative
-		to the main COLLADASW file.*/
+		/** Returns the URI of the COLLADASW file created for the max file.
+        URI can be optionally relative to the main COLLADASW file - depending
+        on value of exportRelativePaths option.*/
 		COLLADASW::URI DocumentExporter::getXRefOutputURI( const ExportSceneGraph::XRefSceneGraph& xRefSceneGraph ) const;
+
+        /** Returns the absolute URI of the COLLADASW file created for the max
+        file.*/
+        COLLADASW::URI DocumentExporter::getAbsoluteXRefOutputURI( const ExportSceneGraph::XRefSceneGraph& xRefSceneGraph, const String& xRefOutputFileDir ) const;
 
         /** Returns a pointer to the max interface.*/
         inline Interface* getMaxInterface()
