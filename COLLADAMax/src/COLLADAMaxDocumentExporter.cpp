@@ -37,6 +37,8 @@
 
 #include <max.h>
 
+#include <ShlObj.h>
+
 namespace COLLADAMax
 {
 
@@ -124,7 +126,14 @@ namespace COLLADAMax
 
 		    for ( ExportSceneGraph::XRefSceneGraphList::const_iterator it = sceneGraphList.begin(); it!=sceneGraphList.end(); ++it )
 		    {
-			    NativeString outputFileName(NativeString(getXRefOutputPath(*it)));
+			    NativeString outputFileName(getXRefOutputPath(*it));
+
+                String directoryPath = COLLADASW::URI::nativePathToUri(outputFileName);
+                directoryPath = COLLADASW::URI(directoryPath).getPathDir();
+                directoryPath = COLLADASW::URI(directoryPath).toNativePath();
+                WideString wideDirectoryPath = COLLADABU::StringUtils::utf8String2WideString(directoryPath);
+                SHCreateDirectory(NULL, wideDirectoryPath.c_str());
+
 			    DocumentExporter document(mMaxInterface, it->exportSceneGraph, outputFileName, mOptions, mExportOnlySelected);
 			    document.exportMaxScene();
 		    }
